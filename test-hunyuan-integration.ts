@@ -1,6 +1,6 @@
 // test-hunyuan-integration.ts
 
-import { generate3DShape, applyTextureToMesh } from 'src/lib/hunyuan3d-integration';
+import { generate3DShape, applyTextureToMesh } from '/hunyuan3d-integration.ts';
 
 // Utility to extract readable error message
 function getErrorMessage(error: unknown): string {

@@ -1,30 +1,44 @@
 // app/api/generate-3d/route.ts
 
 import { NextRequest } from "next/server";
-import { generate3DShape, applyTextureToMesh } from "src/lib/hunyuan3d-integration";
+// Adjust path based on actual location
+import {
+  generate3DShape,
+  applyTextureToMesh,
+} from "../../../src/lib/hunyuan3d-integration";
+import { Conceivo3DIntegration } from "/conceivin3d/ai/integrations/conceivo_3d_integration";
+
+const conceivo = new Conceivo3DIntegration();
 
 export async function POST(req: NextRequest) {
   try {
-    const { imagePath } = await req.json();
+    const { prompt } = await req.json();
 
-    if (!imagePath) {
+    if (!prompt) {
+      return new Response(JSON.stringify({ error: "Prompt is required." }), {
+        status: 400,
+      });
+    }
+
+    // Use Conceivo AI to process the 3D command and generate code
+    const generatedCode = await conceivo.process_3d_command(prompt);
+
+    if (!generatedCode) {
       return new Response(
-        JSON.stringify({ error: "Image path is required." }),
-        { status: 400 }
+        JSON.stringify({ error: "Failed to generate 3D code from prompt." }),
+        { status: 500 }
       );
     }
 
-    // Step 1: Generate 3D shape from image
-    const meshUntextured = await generate3DShape(imagePath);
-
-    // Step 2: Apply texture to the generated mesh
-    const meshTextured = await applyTextureToMesh(meshUntextured, imagePath);
-
-    return new Response(JSON.stringify({ mesh: meshTextured }), { status: 200 });
+    // For now, we'll just return the generated code
+    // In a real implementation, this would execute the code or queue a generation task
+    return new Response(JSON.stringify({ code: generatedCode }), {
+      status: 200,
+    });
   } catch (error) {
-    console.error("Error generating 3D asset:", error);
+    console.error("Error generating 3D from prompt:", error);
     return new Response(
-      JSON.stringify({ error: "Failed to generate 3D asset." }),
+      JSON.stringify({ error: "Failed to generate 3D from prompt." }),
       { status: 500 }
     );
   }
