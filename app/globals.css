@@ -1,9 +1,46 @@
+@layer base {
+  /* Global Base Styles */
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground h-full overflow-x-hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold;
+  }
+
+  p {
+    @apply text-base leading-relaxed;
+  }
+
+  a {
+    @apply underline-offset-4 hover:underline transition-colors;
+  }
+
+  button {
+    @apply transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-nebula-purple/40;
+  }
+
+  input,
+  textarea,
+  select {
+    @apply focus:ring-2;
+  }
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* Base Theme Variables */
-@layer base {
+@layer components {
   :root {
     /* HSL Colors */
     --background: 0 0% 0%;
@@ -130,44 +167,6 @@
     --midnight-blue: 230 20% 10%;
     --nebula-purple: 270 60% 35%;
     --star-yellow: 30 70% 60%;
-  }
-}
-
-/* Global Base Styles */
-@layer base {
-  * {
-    @apply border-border;
-  }
-
-  body {
-    @apply bg-background text-foreground h-full overflow-x-hidden;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-bold;
-  }
-
-  p {
-    @apply text-base leading-relaxed;
-  }
-
-  a {
-    @apply underline-offset-4 hover:underline transition-colors;
-  }
-
-  button {
-    @apply transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-nebula-purple/40;
-  }
-
-  input,
-  textarea,
-  select {
-    @apply focus:ring-2 focus:ring-nebula-purple/40;
   }
 }
 
@@ -373,7 +372,8 @@
   }
 
   /* Focus Ring */
-  .focus\:ring-logo:focus {
+  .focus\:ring-logo:focus,
+  .focus\:ring-nebula-purple\/40:focus {
     outline: none;
     box-shadow: 0 0 0 3px hsl(var(--nebula-purple) / 0.4);
   }
@@ -591,7 +591,7 @@
   }
 
   /* Active States */
-  .active\:translate-y-0.5:active {
+  .active\\:translate-y-0.5:active {
     transform: translateY(0.125rem);
   }
 
@@ -748,7 +748,7 @@
   }
 
   /* Custom Focus Outline */
-  .focus-visible\:outline-logo {
+  .focus-visible\\:outline-logo {
     outline: 2px solid hsl(var(--nebula-purple));
     outline-offset: 2px;
   }
