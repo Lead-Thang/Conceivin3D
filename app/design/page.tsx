@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Navbar } from "../../components/navbar"
-import { ChatAssistant } from "../../components/chat-assistant"
+import { ChatAssistant } from "../../components/conceivo-chat-assistant"
 import { VoiceAssistant } from "../../components/voice-assistant"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
 import { Button } from "../../components/ui/button"

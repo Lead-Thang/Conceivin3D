@@ -10,17 +10,16 @@ import { MessageCircle, X, Send, Bot, User, Minimize2, Maximize2, Loader2, Zap }
 import { cn } from "../lib/utils"
 import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
 import { useModelViewer } from "../hooks/use-model-viewer"
-import { PluginManager } from "../../lib/plugin-manager"
+import { PluginManager } from "@/lib/plugin-manager.ts"
 
-export function ChatAssistant({ id }: { id?: string }) {
+export function ConceivoChatAssistant({ id }: { id?: string }) {
   const [isOpen, setIsOpen] = useState(true)
   const [isMinimized, setIsMinimized] = useState(false)
   const [activeSource, setActiveSource] = useState("chatgpt")
   const [plugins, setPlugins] = useState<Array<{ plugin: AIPlugin; enabled: boolean }>>([])
 
   const pluginManagerRef = useRef(new PluginManager())
-
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, processAIMessage } = useAIAssistant()
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, sendCommand } = useAIAssistant()
   const { addObject, deleteSelected, updateScale, updatePosition, updateColor } = useModelViewer()
 
   const aiProviders = {
@@ -29,19 +28,32 @@ export function ChatAssistant({ id }: { id?: string }) {
     hunyuan: { name: 'Hunyuan' }
   }
 
-  // Update AI provider when source changes
   useEffect(() => {
     setAISource(activeSource)
   }, [activeSource])
 
-  // Initialize plugins based on selected AI source
   useEffect(() => {
     const availablePlugins: Array<AIPlugin> = [
-      // Add plugins specific to the selected AI here
-      // Example:
-      // { name: "hunyuan3d", supportsCommands: ["generate-mesh"] }
+      { 
+        name: "conceivo3d", 
+        supportsCommands: ["add", "delete", "update"],
+        execute: async (command: string, context: any) => {
+          switch(command) {
+            case 'add':
+              return addObject(context);
+            case 'delete':
+              return deleteSelected();
+            case 'update':
+              if (context.scale) return updateScale(context.axis, context.value);
+              if (context.position) return updatePosition(context.axis, context.value);
+              if (context.color) return updateColor(context);
+              break;
+            default:
+              throw new Error(`Unsupported command: ${command}`);
+          }
+        }
+      }
     ]
-
     availablePlugins.forEach(plugin => pluginManagerRef.current.register(plugin))
     setPlugins(pluginManagerRef.current.getAll())
   }, [activeSource])
@@ -63,23 +75,12 @@ export function ChatAssistant({ id }: { id?: string }) {
     }
   }, [isOpen, isMinimized])
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
-    handleSubmit(e)
-
-    // Optional: Process message after sending
-    setTimeout(() => {
-      processAIMessage?.(input)
-    }, 500)
-  }
-
   if (!isOpen) {
     return (
       <Button
         onClick={() => setIsOpen(true)}
         className="fixed top-20 right-4 z-50 rounded-full w-12 h-12 btn-logo-gradient text-white shadow-lg border-0"
-        aria-label="Open Grok AI Assistant"
+        aria-label="Open Conceivo AI Assistant"
       >
         <MessageCircle className="h-6 w-6" />
       </Button>
@@ -95,7 +96,6 @@ export function ChatAssistant({ id }: { id?: string }) {
         "bg-black/80 backdrop-blur-md",
       )}
     >
-      {/* Header */}
       <CardHeader className="p-3 border-b border-logo-purple/20 flex flex-row items-center justify-between space-y-0 bg-logo-gradient">
         <CardTitle className="text-sm font-medium flex items-center text-white">
           <Bot className="h-4 w-4 mr-2" />
@@ -116,7 +116,7 @@ export function ChatAssistant({ id }: { id?: string }) {
             variant="ghost"
             size="sm"
             onClick={() => setIsOpen(false)}
-            aria-label="Close Grok AI Assistant"
+            aria-label="Close Conceivo AI Assistant"
             className="h-6 w-6 p-0 text-white hover:bg-white/20"
           >
             <X className="h-3 w-3" />
@@ -126,16 +126,7 @@ export function ChatAssistant({ id }: { id?: string }) {
 
       {!isMinimized && (
         <CardContent className="p-0">
-          {/* Messages */}
           <div className="relative h-64 overflow-y-auto p-3 space-y-3 chat-messages">
-            {messages.length === 0 && !isLoading && (
-              <div className="text-center text-gray-500 text-sm py-6">
-                <Zap className="h-8 w-8 text-yellow-400 mx-auto mb-2" />
-                <p className="font-medium">Powered by Grok AI</p>
-                <p className="text-xs mt-1">Ask me anything about 3D modeling, CAD tools, or design suggestions.</p>
-              </div>
-            )}
-
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
@@ -160,62 +151,31 @@ export function ChatAssistant({ id }: { id?: string }) {
                 </div>
               </div>
             ))}
-
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-gray-800/70 text-gray-300 rounded-lg px-3 py-2 border border-logo-purple/20">
-                  <div className="flex items-center space-x-2">
-                    <Bot className="h-4 w-4 text-logo-purple" />
-                    <Zap className="h-3 w-3 text-yellow-400 animate-pulse" />
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-logo-purple rounded-full animate-bounce" />
-                      <div
-                        className="w-2 h-2 bg-logo-cyan rounded-full animate-bounce"
-                        style={{ animationDelay: "0.1s" }}
-                      />
-                      <div
-                        className="w-2 h-2 bg-logo-purple rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
-                    </div>
-                  </div>
+                  <Loader2 className="h-4 w-4 animate-spin text-logo-purple" />
                 </div>
               </div>
             )}
-
             {error && (
               <div className="flex justify-start">
                 <div className="bg-red-900/70 text-red-300 rounded-lg px-3 py-2 border border-red-500/20">
-                  <div className="flex items-center space-x-2">
-                    <Bot className="h-4 w-4 text-red-400" />
-                    <p className="text-sm">
-                      Error: {typeof error === 'string' ? error : JSON.stringify(error)}
-                    </p>
-                  </div>
+                  <p className="text-sm">{error}</p>
                 </div>
               </div>
             )}
-
-            {/* Bottom of message list */}
             <div ref={messagesEndRef} />
           </div>
-
-          {/* Input */}
           <div className="p-3 border-t border-logo-purple/20">
-            <form onSubmit={onSubmit} className="flex items-center space-x-2">
+            <form onSubmit={handleSubmit} className="flex items-center space-x-2">
               <Input
                 ref={inputRef}
                 value={input}
                 onChange={handleInputChange}
-                placeholder="Ask Grok about 3D modeling..."
+                placeholder="Ask Conceivo about 3D modeling..."
                 className="flex-1 border-logo-purple/30 focus:border-logo-cyan bg-slate-900/50 text-white"
                 disabled={isLoading}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault()
-                    onSubmit(e)
-                  }
-                }}
               />
               <Button
                 type="submit"
@@ -260,7 +220,7 @@ export function ChatAssistant({ id }: { id?: string }) {
                         )
                         setPlugins(updatedPlugins)
                       }}
-                      className={`h-6 w-6 p-0 ${enabled ? 'text-green-400' : 'text-gray-600'}`}
+                      className={cn(`h-6 w-6 p-0`, enabled ? 'text-green-400' : 'text-gray-600')}
                     >
                       {enabled ? '✔' : '✘'}
                     </button>

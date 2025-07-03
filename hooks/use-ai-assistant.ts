@@ -3,21 +3,21 @@
 import type React from "react"
 import { useState, useCallback } from "react"
 import type { UseModelViewerReturn } from "@/hooks/use-model-viewer"
-import { getActiveAIProvider } from "../lib/ai-adapters-config"
+import axios from "axios"
 
-let activeAIProvider: AIProvider = getActiveAIProvider()
-
-export function setAISource(source: string) {
-  // Implementation to update the AI source
-  // This would typically involve updating some state or configuration
-  // For now, we'll just log the change and return true
-  console.log(`Switching AI source to: ${source}`)
-  return true
-}
-
-// Define AIProvider type - this should match what's in ai-adapters-config
 export type AIProvider = {
   sendMessage(messages: Message[]): Promise<{ message: string; command?: any }>
+}
+
+export type Message = {
+  id: string
+  role: "user" | "assistant"
+  content: string
+}
+
+export function setAISource(source: string) {
+  console.log(`Switching AI source to: ${source}`)
+  return true
 }
 
 export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
@@ -26,7 +26,7 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
       id: "welcome",
       role: "assistant",
       content:
-        "Hello! I'm your Conceivin3D assistant. I can help with 3D modeling, measurements, and design suggestions. Try asking me about creating objects, changing properties, or using the tools!",
+        "Hello! I'm your Conceivin3D assistant powered by PyTorch. I can help with 3D modeling and learn engineering knowledge. Try 'learn more' or ask about creating objects!",
     },
   ])
   const [input, setInput] = useState("")
@@ -35,7 +35,7 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setInput(e.target.value)
-    setError(null) // Clear error when user starts typing
+    setError(null)
   }, [])
 
   const handleSubmit = useCallback(
@@ -49,26 +49,30 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
         content: input.trim(),
       }
 
-      setMessages((prev) => [...prev, userMessage])
+      setMessages((prev: Message[]) => [...prev, userMessage])
       setInput("")
       setIsLoading(true)
       setError(null)
 
       try {
-        const aiProvider = getActiveAIProvider()
-        const response = await aiProvider.sendMessage([...messages, userMessage])
+        const response = await axios.post("http://localhost:8000/api/conceivo", {
+          message: input,
+          metrics: input.match(/\d+\.?\d*/g)?.map(Number) || [50000, 0.95, 150],
+        })
+        const { message, predicted_efficiency, command, new_knowledge } = response.data
 
         const assistantMessage: Message = {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content: response.message,
+          content: predicted_efficiency
+            ? `${message} (Predicted: ${predicted_efficiency})`
+            : message + (new_knowledge ? `\nNew Knowledge: ${new_knowledge}` : ""),
         }
 
-        setMessages((prev) => [...prev, assistantMessage])
+        setMessages((prev: Message[]) => [...prev, assistantMessage])
 
-        // Process any commands if viewer actions are available
-        if (viewerActions && response.command) {
-          processCommand(response.command, viewerActions)
+        if (viewerActions && command) {
+          processCommand(command, viewerActions)
         }
       } catch (err) {
         console.error("AI Assistant error:", err)
@@ -79,9 +83,9 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
           id: `error-${Date.now()}`,
           role: "assistant",
           content:
-            "I'm sorry, I encountered an error processing your request. Please try again, or ask me something else about 3D modeling.",
+            "I'm sorry, I encountered an error. Please try again, or check the server with 'learn more' to refresh knowledge.",
         }
-        setMessages((prev) => [...prev, errorResponse])
+        setMessages((prev: Message[]) => [...prev, errorResponse])
       } finally {
         setIsLoading(false)
       }
@@ -95,9 +99,8 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
       role: "user",
       content: command,
     }
-    setMessages((prev) => [...prev, commandMessage])
+    setMessages((prev: Message[]) => [...prev, commandMessage])
 
-    // Trigger the submit with the command
     setInput(command)
     setTimeout(() => {
       const form = document.querySelector("form") as HTMLFormElement
@@ -120,7 +123,6 @@ export function useAIAssistant(viewerActions?: UseModelViewerReturn) {
   }, [])
 
   const processAIMessage = useCallback((messageContent: string) => {
-    // This can be used for additional processing if needed
     console.log("Processing AI message:", messageContent)
   }, [])
 
