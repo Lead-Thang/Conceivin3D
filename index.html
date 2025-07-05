@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceivo 3D Editor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #canvas { width: 70%; height: 100vh; float: left; }
+        #controls { width: 30%; height: 100vh; float: right; background: #f0f0f0; padding: 10px; overflow-y: auto; }
+        .highlight { color: red; }
+    </style>
+</head>
+<body>
+    <div id="canvas"></div>
+    <div id="controls">
+        <h3>Model Parts</h3>
+        <ul id="partsList"></ul>
+        <input type="text" id="commandInput" placeholder="e.g., delete windshield" onkeypress="if(event.key === 'Enter') processCommand()">
+        <button onclick="processCommand()">Submit</button>
+    </div>
+
+    <script>
+        let scene, camera, renderer, model, selectedObject = null;
+        const parts = {};
+
+        // Initialize Three.js scene
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth * 0.7 / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas') });
+            renderer.setSize(window.innerWidth * 0.7, window.innerHeight);
+            camera.position.z = 5;
+
+            // Simple cube as a placeholder (replace with car model)
+            const geometry = new THREE.BoxGeometry();
+            const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+            model = new THREE.Mesh(geometry, material);
+            scene.add(model);
+
+            // Add parts (e.g., windshield, door)
+            parts.windshield = model.clone();
+            parts.door = model.clone();
+            parts.handle = model.clone();
+            scene.add(parts.windshield, parts.door, parts.handle);
+
+            // Raycaster for selection
+            document.getElementById('canvas').addEventListener('click', onCanvasClick);
+            animate();
+        }
+
+        function onCanvasClick(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+            const intersects = raycaster.intersectObjects(Object.values(parts));
+            if (intersects.length > 0) {
+                selectedObject = intersects[0].object;
+                highlightSelected();
+            }
+        }
+
+        function highlightSelected() {
+            if (selectedObject) {
+                selectedObject.material.color.set(0xff0000); // Highlight in red
+                updatePartsList();
+            }
+        }
+
+        function updatePartsList() {
+            const list = document.getElementById('partsList');
+            list.innerHTML = '';
+            for (const [name, obj] of Object.entries(parts)) {
+                const li = document.createElement('li');
+                li.textContent = name + (obj === selectedObject ? ' (selected)' : '');
+                li.className = obj === selectedObject ? 'highlight' : '';
+                list.appendChild(li);
+            }
+        }
+
+        function processCommand() {
+            const command = document.getElementById('commandInput').value.toLowerCase();
+            if (selectedObject && command.startsWith('delete')) {
+                const partName = Object.keys(parts).find(key => parts[key] === selectedObject);
+                if (partName) {
+                    scene.remove(selectedObject);
+                    delete parts[partName];
+                    selectedObject = null;
+                    updatePartsList();
+                    alert(`Deleted ${partName}!`);
+                }
+            }
+            document.getElementById('commandInput').value = '';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -16,8 +16,6 @@ from crawl4ai.async_configs import LLMConfig as CrawlLLMConfig
 import httpx
 from backend.utils import GrokAI
 
-# Use the imported LLMConfig directly without redefining it
-
 # Adjust path to include the lib directory (where conceico.py is located)
 sys.path.append(r"d:\Conceivin3D\lib")
 
@@ -43,16 +41,14 @@ async def lifespan(app: FastAPI):
     await app.state.crawler.close()
 
 def configure_app(app: FastAPI):
-    # Load Mistral API key
     mistral_api_key = os.getenv("MISTRAL_API_KEY")
-    # Load xAI API key
     xai_api_key = os.getenv("XAI_API_KEY")
     
     if mistral_api_key:
         secret_mistral_api_key = SecretStr(mistral_api_key)
         app.state.llm_config = CrawlLLMConfig(
-            provider="mistral/gpt-4",  # Example format that matches expected input
-            api_token=secret_mistral_api_key.get_secret_value()  # Adjusted parameter name
+            provider="mistral/gpt-4",
+            api_token=secret_mistral_api_key.get_secret_value()
         )
         app.state.extraction_strategy = LLMExtractionStrategy(
             llm_config=app.state.llm_config,
@@ -65,7 +61,6 @@ def configure_app(app: FastAPI):
         app.state.llm_config = None
         app.state.extraction_strategy = None
     
-    # Store xAI API key in app state
     if xai_api_key:
         app.state.xai_api_key = SecretStr(xai_api_key)
     else:
@@ -77,12 +72,14 @@ app = FastAPI(lifespan=lifespan)
 class AIRequest(BaseModel):
     message: str
     metrics: list[float] = []
+    selected_part: str | None = None  # New field for part selection
 
 class AIResponse(BaseModel):
     message: str
     predicted_efficiency: float | None = None
     command: dict | None = None
     new_knowledge: str | None = None
+    edit_result: str | None = None  # New field for edit feedback
 
 class ConceivoNet(nn.Module):
     def __init__(self, input_size: int = 3, hidden_size: int = 10, output_size: int = 1):
@@ -135,6 +132,7 @@ async def get_ai_response(ai_request: AIRequest, request: Request):
     command = None
     predicted_efficiency = None
     new_knowledge = None
+    edit_result = None
 
     if "learn more" in user_message:
         new_knowledge = await crawl_engineering_knowledge()
@@ -163,18 +161,35 @@ async def get_ai_response(ai_request: AIRequest, request: Request):
         response = "Added a sphere to the scene."
         command = {"action": "add", "params": {"type": "sphere"}}
 
+    # Handle edit commands
+    if ai_request.selected_part and any(action in user_message for action in ["delete", "fix", "fill"]):
+        part_name = ai_request.selected_part.lower()
+        if "delete" in user_message and part_name in ["body", "windshield", "door", "handle"]:
+            edit_result = f"Deleted {part_name} from the model."
+            command = {"action": "delete", "params": {"part": part_name}}
+        elif "fix" in user_message and part_name in ["body", "windshield", "door", "handle"]:
+            edit_result = f"Fixed {part_name} (e.g., adjusted color or structure)."
+            command = {"action": "fix", "params": {"part": part_name}}
+        elif "fill" in user_message and part_name in ["body", "windshield", "door", "handle"]:
+            edit_result = f"Filled {part_name} with default material."
+            command = {"action": "fill", "params": {"part": part_name}}
+        else:
+            edit_result = f"Unknown part or action for {part_name}. Valid parts: body, windshield, door, handle."
+
     full_knowledge = request.app.state.initial_knowledge + (new_knowledge or "")
     if full_knowledge and any(keyword in user_message for keyword in ["design", "material", "stress"]):
         response += f"\nBased on what I’ve learned: {full_knowledge.split('\n')[0][:200]}..."
 
-    return AIResponse(message=response, predicted_efficiency=predicted_efficiency, command=command, new_knowledge=new_knowledge)
+    return AIResponse(
+        message=response,
+        predicted_efficiency=predicted_efficiency,
+        command=command,
+        new_knowledge=new_knowledge,
+        edit_result=edit_result
+    )
 
 @app.post("/api/crawl")
 async def ai_crawl(request: Request, url: Union[str, None] = None):
-    """
-    Endpoint to perform AI-powered web crawling using x.ai API.
-    Accepts a URL parameter or uses SEED_URLS from config.
-    """
     urls = [url] if url else SEED_URLS
     
     if not urls:
@@ -223,7 +238,6 @@ async def ai_crawl(request: Request, url: Union[str, None] = None):
                         "url": target_url,
                         "error": f"HTTP {response.status_code}: {response.text}"
                     })
-                    
             except Exception as e:
                 results.append({
                     "url": target_url,
