@@ -10,7 +10,8 @@ import { MessageCircle, X, Send, Bot, User, Minimize2, Maximize2, Loader2, Zap }
 import { cn } from "../lib/utils"
 import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
 import { useModelViewer } from "../hooks/use-model-viewer"
-import { PluginManager } from "@/lib/plugin-manager.ts"
+import { PluginManager } from "/lib/plugin-manager"
+import { ExternalLink, BookOpen } from "lucide-react"
 
 export function ConceivoChatAssistant({ id }: { id?: string }) {
   const [isOpen, setIsOpen] = useState(true)
@@ -146,7 +147,40 @@ export function ConceivoChatAssistant({ id }: { id?: string }) {
                     ) : (
                       <User className="h-4 w-4 mt-0.5 text-logo-cyan flex-shrink-0" />
                     )}
-                    <p className="text-sm whitespace-pre-line">{message.content}</p>
+                    <p className="text-sm whitespace-pre-line">
+                      {message.content.split('\n').map((line, i) => {
+                        // Special handling for Kaggle links
+                        if (line.startsWith("[Kaggle Resource:")) {
+                          const match = line.match(/\[Kaggle Resource: (.*)\]\n(.*)\nURL: (.*)/)
+                          if (match) {
+                            return (
+                              <div key={i} className="mt-2 p-2 bg-gray-900/50 rounded">
+                                <a href={match[3]} target="_blank" rel="noopener noreferrer" className="flex items-center text-blue-400 hover:text-blue-300">
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  <span className="font-medium">{match[1]}</span>
+                                </a>
+                                <p className="mt-1 text-gray-300 text-xs">{match[2].slice(0, 100)}...</p>
+                              </div>
+                            )
+                          }
+                        }
+                        
+                        // Display knowledge entries
+                        if (line.startsWith("Additional insights about")) {
+                          return (
+                            <div key={i} className="mt-2 p-2 bg-purple-900/30 rounded">
+                              <div className="flex items-center mb-1">
+                                <BookOpen className="h-3 w-3 mr-1 text-purple-400" />
+                                <span className="text-purple-300 text-xs font-medium">Knowledge Base</span>
+                              </div>
+                              <p className="text-gray-300 text-xs">{line.replace("Additional insights about ", "")}</p>
+                            </div>
+                          )
+                        }
+                        
+                        return <span key={i}>{line}</span>
+                      })}
+                    </p>
                   </div>
                 </div>
               </div>

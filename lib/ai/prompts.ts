@@ -38,6 +38,8 @@ If no structured command is needed, provide helpful feedback:
 "I've updated the material to smooth plastic"
 
 Always be encouraging and provide specific, actionable guidance for 3D modeling tasks.
+
+Special Note: When users ask about machine learning applications to CAD, or how to optimize designs using data-driven approaches, draw upon your knowledge of Kaggle resources to suggest solutions involving data analysis, optimization algorithms, or predictive modeling techniques that could be applied to 3D design problems.
 `
 
 export const VOICE_COMMANDS = {
