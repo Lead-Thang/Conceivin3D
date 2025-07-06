@@ -10,7 +10,7 @@ import { MessageCircle, X, Send, Bot, User, Minimize2, Maximize2, Loader2, Zap }
 import { cn } from "../lib/utils"
 import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
 import { useModelViewer } from "../hooks/use-model-viewer"
-import { PluginManager } from "/lib/plugin-manager"
+import { PluginManager } from "../lib/plugin-manager"
 import { ExternalLink, BookOpen } from "lucide-react"
 
 export function ConceivoChatAssistant({ id }: { id?: string }) {
