@@ -1,8 +1,9 @@
 // Define AIPlugin interface
-type AIPlugin = {
+interface AIPlugin {
   name: string;
   supportsCommands: string[];
-};
+  execute(command: string, context: any): Promise<any>;
+}
 
 // PluginManager class to handle plugin registration and management
 class PluginManager {
@@ -42,3 +43,7 @@ class PluginManager {
     }
   }
 }
+
+export { PluginManager };
+export type { AIPlugin };
+// Export PluginManager as value and AIPlugin as type

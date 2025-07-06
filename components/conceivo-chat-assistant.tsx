@@ -1,17 +1,21 @@
 "use client"
 
 import type React from "react"
-import type { AIPlugin } from "../types/ai-plugin"
 import { useRef, useEffect, useState } from "react"
-import { Button } from "./ui/button"
-import { Input } from "./ui/input"
+import type { AIPlugin } from "../types/ai-plugin"
+import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
+import { useModelViewer } from "../hooks/use-model-viewer"
+import { ExternalLink, BookOpen } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MessageCircle, X, Send, Bot, User, Minimize2, Maximize2, Loader2, Zap } from "lucide-react"
 import { cn } from "../lib/utils"
-import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
-import { useModelViewer } from "../hooks/use-model-viewer"
+
+// Explicitly import the PluginManager type for type annotations
+import type { PluginManager as PluginManagerType } from "../lib/plugin-manager"
+// Import the actual PluginManager class for instantiation
 import { PluginManager } from "../lib/plugin-manager"
-import { ExternalLink, BookOpen } from "lucide-react"
 
 export function ConceivoChatAssistant({ id }: { id?: string }) {
   const [isOpen, setIsOpen] = useState(true)
@@ -231,11 +235,14 @@ export function ConceivoChatAssistant({ id }: { id?: string }) {
               onChange={(e) => setActiveSource(e.target.value)}
               className="w-full bg-black text-white text-sm border border-logo-purple/30 rounded p-1.5"
             >
-              {Object.entries(aiProviders).map(([value, provider]) => (
-                <option key={value} value={value}>
-                  {value.charAt(0).toUpperCase() + value.slice(1)}
-                </option>
-              ))}
+              {Object.keys(aiProviders).map((value) => {
+                const provider = aiProviders[value as keyof typeof aiProviders];
+                return (
+                  <option key={value} value={value}>
+                    {value.charAt(0).toUpperCase() + value.slice(1)}
+                  </option>
+                )
+              })}
             </select>
           </div>
           {plugins.length > 0 && (

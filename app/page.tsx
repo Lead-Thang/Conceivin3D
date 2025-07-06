@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect } from "react";
 import { Navbar } from "../components/navbar"
 import { Hero } from "../components/hero"
 import { Button } from "../components/ui/button"
@@ -269,7 +268,7 @@ This design blends futuristic aesthetics with functional space technology.`,
             isSidebarOpen ? "w-64" : "w-0"
           } overflow-hidden bg-nebula-purple/80 backdrop-blur-sm border-r border-nebula-purple/20`}
         >
-          <div className="p-4">
+          <div className="p-4" role="region" aria-label="Sidebar content">
             <Button
               variant="ghost"
               size="sm"
@@ -468,7 +467,7 @@ This design blends futuristic aesthetics with functional space technology.`,
                 {generatedScene && activeTab === "image" && (
                   <CardContent className="p-6">
                     <div className="flex flex-col items-center">
-                      <div className="relative w-full max-w-md aspect-square mb-4 border border-nebula-purple/30 rounded-lg overflow-hidden">
+                      <div className="relative w-full max-w-md aspect-square mb-4 border border-nebula-purple/30 rounded-lg overflow-hidden" itemType="https://schema.org/ThreeDimensionalModel">
                         <svg
                           ref={svgRef}
                           style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
