@@ -5,7 +5,11 @@ module.exports = {
     "./components/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        border: 'hsl(var(--muted-foreground) / 0.3)',
+      },
+    },
   },
   plugins: [
     require('@tailwindcss/postcss7-compat')({ stage: 2 }),
