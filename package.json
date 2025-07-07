@@ -13,7 +13,9 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-toast": "^1.2.14",
-    "@tailwindcss/postcss": "^4.1.11",
+    "@react-three/drei": "^10.4.4",
+    "@react-three/fiber": "^9.2.0",
+    "@use-gesture/react": "^10.3.1",
     "ai": "^4.3.16",
     "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
@@ -28,11 +30,10 @@
     "three": "^0.178.0"
   },
   "devDependencies": {
-    "@tailwindcss/postcss7-compat": "^2.2.17",
     "@types/react": "^19.1.8",
     "@types/three": "^0.178.0",
-    "autoprefixer": "^9.8.8",
-    "postcss": "^7.0.39",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3"
   }

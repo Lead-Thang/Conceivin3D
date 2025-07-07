@@ -2,7 +2,7 @@ import type React from "react"
 export type ModelObject = {
   id: string
   name?: string // Optional display name
-  type: "box" | "sphere" | "cylinder" | "cone" | "torus" | "plane" | "wedge"
+  type: "box" | "sphere" | "cylinder" | "cone" | "torus" | "plane" | "wedge" | "stl"
   position: [number, number, number]
   rotation: [number, number, number]
   scale: [number, number, number]
@@ -15,6 +15,8 @@ export type ModelObject = {
   parentId?: string | null
   createdAt: number
   updatedAt: number
+  modelPath?: string // For STL models
+  stress?: number // For stress visualization
 }
 
 export type BoxParams = {
