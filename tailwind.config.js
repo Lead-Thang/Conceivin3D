@@ -7,5 +7,7 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/postcss7-compat')({ stage: 2 }),
+  ],
 }
