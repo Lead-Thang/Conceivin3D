@@ -5,7 +5,7 @@ import { useRef, useEffect, useState } from "react"
 import type { AIPlugin } from "../types/ai-plugin"
 import { useAIAssistant, setAISource } from "../hooks/use-ai-assistant"
 import { useModelViewer } from "../hooks/use-model-viewer"
-import { ExternalLink, BookOpen } from "lucide-react"
+import { ExternalLink, BookOpen, Wand2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,6 +22,8 @@ export function ConceivoChatAssistant({ id }: { id?: string }) {
   const [isMinimized, setIsMinimized] = useState(false)
   const [activeSource, setActiveSource] = useState("chatgpt")
   const [plugins, setPlugins] = useState<Array<{ plugin: AIPlugin; enabled: boolean }>>([])
+  const [showGenerationInput, setShowGenerationInput] = useState(false)
+  const [generationPrompt, setGenerationPrompt] = useState("")
 
   const pluginManagerRef = useRef(new PluginManager())
   const { messages, input, handleInputChange, handleSubmit, isLoading, error, sendCommand } = useAIAssistant()
@@ -206,6 +208,91 @@ export function ConceivoChatAssistant({ id }: { id?: string }) {
             <div ref={messagesEndRef} />
           </div>
           <div className="p-3 border-t border-logo-purple/20">
+            <div className="flex space-x-2 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowGenerationInput(!showGenerationInput)}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                aria-label={showGenerationInput ? "Cancel generation" : "Generate 3D model"}
+              >
+                <Wand2 className="h-3 w-3" />
+              </Button>
+              
+              <form onSubmit={handleSubmit} className="flex items-center space-x-2">
+                <Input
+                  ref={inputRef}
+                  value={input}
+                  onChange={handleInputChange}
+                  placeholder="Ask Conceivo about 3D modeling..."
+                  className="flex-1 border-logo-purple/30 focus:border-logo-cyan bg-slate-900/50 text-white"
+                  disabled={isLoading}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  disabled={isLoading || !input.trim()}
+                  className="btn-logo-gradient text-white border-0 hover:bg-logo-cyan/90"
+                >
+                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </form>
+            </div>
+
+            {showGenerationInput && (
+              <div className="mb-3 p-2 bg-gray-900/50 rounded border border-logo-purple/30">
+                <label className="text-xs text-gray-400 block mb-1">Describe the 3D model you want to generate:</label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={generationPrompt}
+                    onChange={(e) => setGenerationPrompt(e.target.value)}
+                    placeholder="e.g., A futuristic rocket engine with cooling channels"
+                    className="flex-1 border-logo-purple/30 focus:border-logo-cyan bg-slate-900/50 text-white"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={async () => {
+                      if (!generationPrompt.trim()) return;
+                      
+                      try {
+                        // Send request to generate 3D model
+                        const response = await fetch("/api/tripo-generate", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ prompt: generationPrompt })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        // Send command to add the generated model
+                        sendCommand(JSON.stringify({
+                          action: "add",
+                          params: {
+                            type: data.model_id,
+                            name: data.name || `Generated Model`,
+                            path: data.model_path
+                          }
+                        }));
+                        
+                        // Reset input
+                        setGenerationPrompt("");
+                        setShowGenerationInput(false);
+                      } catch (error) {
+                        console.error("Error generating model:", error);
+                        // Handle error
+                      }
+                    }}
+                    disabled={!generationPrompt.trim()}
+                    className="btn-logo-gradient text-white border-0 hover:bg-logo-cyan/90"
+                  >
+                    Generate
+                  </Button>
+                </div>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="flex items-center space-x-2">
               <Input
                 ref={inputRef}
